@@ -1,0 +1,28 @@
+{
+  "name": "roeid-reader",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/andrei-dascalu/roeid-reader#readme",
+  "bugs": {
+    "url": "https://github.com/andrei-dascalu/roeid-reader/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andrei-dascalu/roeid-reader.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint:md": "markdownlint '*.md' 'docs/**/*.md' --config .markdownlint.json",
+    "lint:md:fix": "markdownlint '*.md' 'docs/**/*.md' --config .markdownlint.json --fix"
+  },
+  "devDependencies": {
+    "markdownlint-cli": "^0.47.0"
+  }
+}
