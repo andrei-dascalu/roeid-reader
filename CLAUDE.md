@@ -127,3 +127,5 @@ See `IMPLEMENTATION_ROADMAP.md` for the 13-phase roadmap. Currently:
 - `docs/architecture/DDD_STRUCTURE.md` - Architecture overview
 - `docs/architecture/BOUNDED_CONTEXTS.md` - Context specifications
 - `docs/architecture/DOMAIN_MODELS.md` - Entity relationships
+- `https://carteadeidentitate.gov.ro/Protocoale%20de%20securitate/` - protocols for the Romanian Electronic Identity Card
+- `https://carteadeidentitate.gov.ro/Standarde%20de%20securitate/` - security standards of the Romanian Electronic Identity Card

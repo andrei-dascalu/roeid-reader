@@ -47,7 +47,7 @@
 - [x] Enhance transport with integrated APDU logging
 - [x] Implement full APDU logging (all requests/responses with timestamps)
 - [x] Add error handling for PC/SC failures (`TransportError` type with codes)
-- [ ] Test with current PIN verification flow (using mocks and go tests)
+- [x] Add unit tests for domain and infrastructure layers
 
 **Deliverable:** Clean APDU logging; all card interactions visible in logs
 
