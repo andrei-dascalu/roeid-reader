@@ -21,6 +21,7 @@ const (
 	StatusFunctionNotFound  uint16 = 0x6881 // Logical channel not supported
 	StatusLogicalChannelErr uint16 = 0x6882 // Secure messaging not supported
 	StatusKeyReferenceErr   uint16 = 0x6A86 // Incorrect parameters (P1/P2)
+	StatusFileNotFound      uint16 = 0x6A82 // File or application not found
 	StatusInstructionErr    uint16 = 0x6D00 // Instruction code not supported
 	StatusCLAErr            uint16 = 0x6E00 // Class not supported
 
@@ -28,7 +29,54 @@ const (
 	StatusSecurityAuthFailed uint16 = 0x6982 // Security status not satisfied
 	StatusIncorrectPIN       uint16 = 0x6983 // Authentication method blocked
 	StatusIncorrectKey       uint16 = 0x6984 // Reference key in use
+
+	// PIN retry counter (0x63Cx where x = remaining tries)
+	StatusPINRetryMask uint16 = 0x63C0 // Mask for PIN retry counter
 )
+
+// TransportErrorCode represents PC/SC transport-level errors
+type TransportErrorCode int
+
+const (
+	ErrNoContext TransportErrorCode = iota + 1
+	ErrNoReaders
+	ErrNoCard
+	ErrCardRemoved
+	ErrConnectionLost
+	ErrTransmissionFailed
+	ErrProtocolMismatch
+	ErrReaderBusy
+	ErrTimeout
+)
+
+// TransportError represents a PC/SC transport-level error (not APDU status)
+type TransportError struct {
+	Code    TransportErrorCode
+	Message string
+	Cause   error
+}
+
+// Error implements the error interface
+func (e *TransportError) Error() string {
+	if e.Cause != nil {
+		return e.Message + ": " + e.Cause.Error()
+	}
+	return e.Message
+}
+
+// Unwrap returns the underlying error
+func (e *TransportError) Unwrap() error {
+	return e.Cause
+}
+
+// NewTransportError creates a new transport error
+func NewTransportError(code TransportErrorCode, message string, cause error) *TransportError {
+	return &TransportError{
+		Code:    code,
+		Message: message,
+		Cause:   cause,
+	}
+}
 
 // StatusError wraps a status code with context
 type StatusError struct {

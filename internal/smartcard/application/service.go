@@ -1,8 +1,6 @@
 package application
 
 import (
-	"fmt"
-
 	"github.com/andrei-dascalu/roeid-reader/internal/smartcard/domain"
 	"github.com/andrei-dascalu/roeid-reader/internal/smartcard/infrastructure"
 )
@@ -18,6 +16,8 @@ func NewSmartCardService(
 	transport *infrastructure.PCSCTransport,
 	logger *infrastructure.APDULogger,
 ) *SmartCardService {
+	// Wire up logger to transport for automatic APDU logging
+	transport.SetLogger(logger)
 	return &SmartCardService{
 		transport: transport,
 		logger:    logger,
@@ -34,84 +34,101 @@ func (s *SmartCardService) Disconnect() error {
 	return s.transport.Disconnect()
 }
 
-// DiagnoseCard reads and displays card information
-func (s *SmartCardService) DiagnoseCard() error {
-	status, err := s.transport.Status()
-	if err != nil {
-		return fmt.Errorf("failed to get card status: %w", err)
-	}
-
-	fmt.Printf("Card ATR: %02X\n", status.ATR)
-	fmt.Printf("Active Protocol: %s\n", status.ActiveProtocol)
-	return nil
+// Status returns current card status (ATR, protocol, reader)
+func (s *SmartCardService) Status() (*domain.CardStatus, error) {
+	return s.transport.Status()
 }
 
-// SelectApplication sends SELECT APDU to activate an application
-func (s *SmartCardService) SelectApplication(aid []byte) error {
+// SelectApplication sends SELECT APDU to activate an application (ISO/IEC 7816-4)
+func (s *SmartCardService) SelectApplication(aid []byte) (*domain.Response, error) {
 	apdu := &domain.APDU{
-		CLA:  0x00,
-		INS:  0xA4,
-		P1:   0x04,
-		P2:   0x00,
+		CLA:  0x00, // ISO/IEC 7816-4: Inter-industry command
+		INS:  0xA4, // SELECT
+		P1:   0x04, // Select by DF name (AID)
+		P2:   0x00, // First or only occurrence
 		Data: aid,
-		Le:   0x00,
+		Le:   0x00, // Accept any response length
 	}
 
 	resp, err := s.transport.Transmit(apdu)
 	if err != nil {
-		s.logger.LogError(err)
-		return err
+		return nil, err
 	}
 
 	if !resp.IsSuccess() {
-		err := domain.NewStatusError(resp)
-		s.logger.LogError(err)
-		return err
+		return resp, domain.NewStatusError(resp)
 	}
 
-	fmt.Printf("SELECT Application Response: %02X\n", resp.Data)
-	return nil
+	return resp, nil
 }
 
-// VerifyPIN sends VERIFY APDU to authenticate with PIN
-func (s *SmartCardService) VerifyPIN(pin []byte) error {
+// VerifyPIN sends VERIFY APDU to authenticate with PIN (ISO/IEC 7816-4)
+func (s *SmartCardService) VerifyPIN(pin []byte, pinRef byte) error {
+	// PIN is typically padded/truncated to 8 bytes for CEI cards
 	if len(pin) > 8 {
 		pin = pin[:8]
 	}
 
 	apdu := &domain.APDU{
-		CLA:  0x00,
-		INS:  0x20,
-		P1:   0x00,
-		P2:   0x01,
+		CLA:  0x00,   // ISO/IEC 7816-4: Inter-industry command
+		INS:  0x20,   // VERIFY
+		P1:   0x00,   // No information given
+		P2:   pinRef, // PIN reference (e.g., 0x01 for PIN1)
 		Data: pin,
 	}
 
 	resp, err := s.transport.Transmit(apdu)
 	if err != nil {
-		s.logger.LogError(err)
 		return err
 	}
 
 	if !resp.IsSuccess() {
-		err := domain.NewStatusError(resp)
-		s.logger.LogError(err)
-		return err
+		return domain.NewStatusError(resp)
 	}
 
-	fmt.Printf("PIN Verification Response: %02X\n", resp.Data)
 	return nil
 }
 
-// Transmit sends a raw APDU
+// Transmit sends a raw APDU command (logging handled by transport)
 func (s *SmartCardService) Transmit(apdu *domain.APDU) (*domain.Response, error) {
-	s.logger.LogCommand(apdu.Bytes())
+	return s.transport.Transmit(apdu)
+}
+
+// TransmitBytes sends raw APDU bytes and returns the full response
+func (s *SmartCardService) TransmitBytes(data []byte) ([]byte, error) {
+	if len(data) < 4 {
+		return nil, domain.NewTransportError(domain.ErrTransmissionFailed,
+			"APDU too short: minimum 4 bytes required", nil)
+	}
+
+	apdu := &domain.APDU{
+		CLA: data[0],
+		INS: data[1],
+		P1:  data[2],
+		P2:  data[3],
+	}
+
+	// Parse optional Lc/Data/Le fields
+	if len(data) > 4 {
+		lc := int(data[4])
+		if len(data) > 5+lc {
+			apdu.Data = data[5 : 5+lc]
+			if len(data) > 5+lc {
+				apdu.Le = data[5+lc]
+			}
+		} else if len(data) == 5 {
+			// Just Le, no data
+			apdu.Le = data[4]
+		} else {
+			apdu.Data = data[5:]
+		}
+	}
+
 	resp, err := s.transport.Transmit(apdu)
 	if err != nil {
-		s.logger.LogError(err)
 		return nil, err
 	}
-	fullResp := append(resp.Data, resp.SW1, resp.SW2)
-	s.logger.LogResponse(fullResp)
-	return resp, nil
+
+	// Return full response including status words
+	return append(resp.Data, resp.SW1, resp.SW2), nil
 }

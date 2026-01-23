@@ -43,19 +43,19 @@
 
 ### Task 2.1: PC/SC Transport Enhancement
 
-- [ ] Review existing `src/infrastructure/reader.go` code
-- [ ] Create `src/apdu/transport.go` for low-level APDU handling
-- [ ] Implement full APDU logging (all requests/responses with timestamps)
-- [ ] Add error handling for PC/SC failures
-- [ ] Test with current PIN verification flow
+- [x] Review existing `internal/smartcard/infrastructure/pcsctransport.go` code
+- [x] Enhance transport with integrated APDU logging
+- [x] Implement full APDU logging (all requests/responses with timestamps)
+- [x] Add error handling for PC/SC failures (`TransportError` type with codes)
+- [ ] Test with current PIN verification flow (using mocks and go tests)
 
 **Deliverable:** Clean APDU logging; all card interactions visible in logs
 
 ### Task 2.2: APDU Response Parsing
 
-- [ ] Create `src/apdu/response.go` to parse status words
-- [ ] Document common status word mappings (0x9000, 0x6982, etc.)
-- [ ] Add validation helpers (e.g., `IsSuccess()`, `IsSecurityError()`)
+- [x] Create `internal/smartcard/domain/apdu.go` with Response type
+- [x] Document common status word mappings in `internal/smartcard/domain/status.go`
+- [x] Add validation helpers (`IsSuccess()`, `StatusError`, `TransportError`)
 
 **Deliverable:** Reusable response parsing utilities
 
@@ -321,21 +321,24 @@
 
 ---
 
-## Quick Reference: Key Files to Create
+## Quick Reference: Key Files (DDD Structure)
 
-| Module | File | Purpose |
-| --- | --- | --- |
-| APDU | `src/apdu/transport.go` | APDU logging & transmission |
-| APDU | `src/apdu/response.go` | Status word parsing |
-| PACE | `src/pace/info.go` | Algorithm capability discovery |
-| PACE | `src/pace/password.go` | K_pi derivation |
-| PACE | `src/pace/mapping.go` | Mapping phase (Step 4) |
-| PACE | `src/pace/agreement.go` | Key agreement (Step 5) |
-| PACE | `src/pace/mutual_auth.go` | Authentication (Step 7) |
-| Crypto | `src/crypto/brainpool.go` | Brainpool256r1 ECC |
-| Crypto | `src/crypto/kdf.go` | Session key derivation |
-| Messaging | `src/messaging/secure.go` | Encryption + CMAC |
-| Main | `main.go` | Update to use PACE layer |
+| Context | File | Purpose | Status |
+| --- | --- | --- | --- |
+| SmartCard | `internal/smartcard/infrastructure/pcsctransport.go` | PC/SC transport | ✅ |
+| SmartCard | `internal/smartcard/infrastructure/logger.go` | APDU logging | ✅ |
+| SmartCard | `internal/smartcard/domain/apdu.go` | APDU/Response models | ✅ |
+| SmartCard | `internal/smartcard/domain/status.go` | Status codes & errors | ✅ |
+| SmartCard | `internal/smartcard/application/service.go` | Service orchestration | ✅ |
+| PACE | `internal/pace/domain/password.go` | K_pi derivation | 🔧 |
+| PACE | `internal/pace/domain/mapping.go` | Mapping phase | 🔧 |
+| PACE | `internal/pace/domain/keyagreement.go` | Key agreement | 🔧 |
+| PACE | `internal/pace/application/service.go` | PACE orchestrator | 🔧 |
+| Crypto | `internal/crypto/infrastructure/brainpool.go` | Brainpool256r1 ECC | 🔧 |
+| Crypto | `internal/crypto/domain/ellipticcurve.go` | EC interfaces | 🔧 |
+| Messaging | `internal/messaging/domain/securemessaging.go` | SM models | 🔧 |
+| Messaging | `internal/messaging/application/service.go` | Encryption service | 🔧 |
+| Main | `cmd/roeid-reader/main.go` | Entry point | ✅ |
 
 ---
 

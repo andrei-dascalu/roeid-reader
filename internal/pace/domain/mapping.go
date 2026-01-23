@@ -4,12 +4,12 @@ import "math/big"
 
 // MappedDomain represents elliptic curve domain parameters after nonce mapping
 type MappedDomain struct {
-	P *big.Int      // Field prime
-	A *big.Int      // Curve coefficient A
-	B *big.Int      // Curve coefficient B
-	G *Point        // Generator point
-	N *big.Int      // Order of generator
-	H *big.Int      // Cofactor
+	P *big.Int // Field prime
+	A *big.Int // Curve coefficient A
+	B *big.Int // Curve coefficient B
+	G *Point   // Generator point
+	N *big.Int // Order of generator
+	H *big.Int // Cofactor
 }
 
 // Point represents an elliptic curve point
@@ -27,8 +27,8 @@ func (p *Point) IsPointAtInfinity() bool {
 type MappingType int
 
 const (
-MappingTypeGM MappingType = iota // Generic Mapping
-MappingTypeIM                      // Integrated Mapping
+	MappingTypeGM MappingType = iota // Generic Mapping
+	MappingTypeIM                    // Integrated Mapping
 )
 
 // Mapping represents the result of nonce-to-domain-parameters mapping
